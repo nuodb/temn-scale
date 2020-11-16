@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: vpn-cluster-service
+spec:
+  selector:
+    app: vpn-service
+  ports:
+  - protocol: TCP
+    name: vpn
+    port: 1194
+    targetPort: 1194
+  type: ClusterIP

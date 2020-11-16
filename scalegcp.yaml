@@ -1,0 +1,361 @@
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry and imagePullSecrets
+##
+# global:
+#   imageRegistry: myRegistryName
+#   imagePullSecrets:
+#     - myRegistryKeySecretName
+
+cloud:
+  # supported: amazon, azure, google
+  provider: google
+  zones:
+#    - us-east-2a
+#    - us-east-2b
+#    - us-east-2c
+
+  cluster:
+    name: gcp
+    entrypointName: gcp
+
+busybox:
+  image:
+    registry: docker.io
+    repository: busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
+    ##
+    # pullSecrets:
+    # - myRegistryKeySecretName
+    ## Specify a imagePullPolicy
+    ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+
+nuodb:
+  image:
+    registry: docker.io
+    repository: nuodb/nuodb-ce
+    tag: 4.0.7-2-mc
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
+    ##
+    # pullSecrets:
+    # - myRegistryKeySecretName
+    ## Specify a imagePullPolicy
+    ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+
+  # the prefix for the shared request value - default value is always valid
+  requestPrefix: ""
+
+  # the prefix for the shared latest backup value - default value is always valid
+  latestPrefix: ""
+
+  # the prefix for the shared latest backup ringbuffer - default value is always valid
+  latestKey: ""
+
+
+admin:
+  # domain is the name of the NuoDB administration domain (e.g. the cluster name)
+  domain: nuodb
+  # namespace: nuodb
+  # tlsCACert:
+  #   secret: nuodb-ca-cert
+  #   key: ca.cert
+  # tlsClientPEM:
+  #   secret: nuodb-client-pem
+  #   key: client.pem
+  securityContext:
+    capabilities: [ "NET_ADMIN" ]
+
+  serviceSuffix:
+    clusterip: "clusterip"
+    balancer: "balancer"
+    
+  # Ex: from: [ configMapRef: { name: myConfigMap }, configMapRef: { name: myOtherConfigMap } ]
+  # Ex: from: [ configMapRef: { name: cluster-global }, configMapRef: { name: cluster-config } ]
+  envFrom:
+    configMapRef:
+      - cluster-config
+      - cluster-global
+
+  # install the WeLab license
+  configFiles:
+    nuodb.lic: |+
+      -----BEGIN LICENSE-----
+      OhE5JHS6lBloXbOtziKT2QxqSrgs+5ar5CkNU34rTuZfuwjT4m8+UCVvi+9Qg9h4
+      oABPKr2oJ7zS85SyUfEBNVzV7FHWZ/9o7sDkbEUPCZLRXNEiA/QNpxs3DZHJBIXs
+      N5DtVeGo3RMzqrvE6tMKw7tQUJOTq7INQACsM6lcC8CQ1HGl87NC0rgXTTgd+AEy
+      KJAne/9qCPlv9OkcAZIulzPUaNHmx3CeUwlZdDaEB9+ARtiOqVnXuRQTPAG/lGwa
+      0LyBbKLeW3weLcBHy8oEob5J/2LGw/fd7LyRRi5WG//L4fEk7OJqA+h+UOT9goT3
+      G+b480lBi8/Tcf/2aFvi5Q==
+      -----END LICENSE-----
+
+  persistence:
+    ## If true, use a Persistent Volume Claim, If false, use emptyDir
+    ##
+    ## n.b. use ReadWriteMany if using local ssd
+    enabled: true
+    size: 1Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-path"
+
+  ## Enable persistent volumes to retain logs when an external logging solution is not used.
+  logPersistence:
+    enabled: true
+    overwriteBackoff:
+      # Copies of the crash directory are taken to avoid overwrites of root crash.
+      # This controls the window within which no more copies of the crash directory will be taken to avoid the disk filling.
+      # Default will retain 3 copies within the last 120 minutes, after which copies will continue to be created.
+      copies: 3
+      windowMinutes: 120
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-path"
+
+nuocollector:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: nuodb/nuodb-collector
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
+  watcher:
+    registry: docker.io
+    repository: kiwigrid/k8s-sidecar
+    tag: 0.1.259
+    pullPolicy: IfNotPresent
+  plugins:
+    ## NuoDB Collector compatible plugins specific for admin services
+    admin: {}
+
+database:
+  ## Provide a name in place of prometheus-operator for `app:` labels
+  ##
+  # nameOverride: ""
+
+  ## Provide a name to substitute for the full names of resources
+  ##
+  #fullnameOverride: ""
+
+  # name
+  # NuoDB Database name.  must consist of lowercase alphanumeric
+  #characters '[a-z0-9]+'
+  name: hockey
+
+  # rootUser
+  # Name of Database user
+  rootUser: dba
+
+  # rootPassword
+  # Database password
+  rootPassword: dba
+
+  # Typically set to runAsUser and/or fsGroup to 0 or 1000.
+  # Add container capabilities such as NET_ADMIN. Ex: capabilities: [ "NET_ADMIN" ]
+  securityContext:
+    capabilities: [NET_ADMIN]
+    enabled: false
+    runAsUser: 1000
+    fsGroup: 1000
+
+  ## Import Environment Variables from one or more configMaps
+  # Ex: from: [ configMapRef: { name: myConfigMap }, configMapRef: { name: myOtherConfigMap } ]
+  ##
+  envFrom:
+    configMapRef:
+    - cluster-global
+    - cluster-config
+
+  persistence:
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-path"
+
+  ## database-wide options.
+  # These are applied using the --database-options on the startup command
+  # change these to values appropriate for this database
+  # these options are applied to all processes in the database.
+  options:
+    ping-timeout: 60
+    max-lost-archives: 0
+
+  # ensure all values here are strings - so quote any purely numeric values
+  autoImport:
+    source: ""
+    credentials: ""
+    stripLevels: "1"
+    type: "stream"
+
+  autoRestore:
+    source: ""
+    credentials: ""
+    stripLevels: "1"
+    type: ""
+    
+  # The names of the clusterIP and balancer services can be adjusted by customising the suffix
+  # The default is to use the same as specified for the admin clusterIP and balancer load-balancers.
+  serviceSuffix:
+    clusterip: ""
+    balancer: ""
+    
+  sm:
+    # Number of storage manager (SM) nodes with hotcopy enabled.  Limit is 1 in CE version of NuoDB
+    # These SMs have hotcopy enabled, to start SMs without hotcopy use
+    # database.sm.noHotCopy.replicas
+    hotCopy:
+      enablePod: false
+      replicas: 1
+
+      # Deadline for starting a job - if a job hasn't started in this time - give up
+      deadine: 1800
+
+      # timeout for completing a job - if a job hasn't completed in this time - stop waiting for it
+      timeout: 1800
+
+      successHistory: 5
+      failureHistory: 5
+
+      backupDir: /var/opt/nuodb/backup
+
+      ## Schedule for the running the full backup cron job
+      # Eg: At 22:35 on every day-of-month if it's on Sunday
+      # fullSchedule: 35 22 */1 * 6
+      fullSchedule: "25 22 */1 * 6"
+
+      ## Schedule for the running the incremental backup cron job
+      # Eg: At 22:35 on every day-of-month if it's on every day-of-week from Monday through Saturday
+      # incrementalSchedule: 35 22 */1 * 0-5
+      incrementalSchedule: "20 */8 * * *"
+
+      persistence:
+        size: 100Gi
+        accessModes:
+          - ReadWriteOnce
+        storageClass: "local-path"
+        
+      coldStorage:
+        credentials: ""
+
+      ## settings for the journal backup
+      # All time values are in seconds unless the unit is included in the name.
+      journalBackup:
+        enabled: false
+        intervalMinutes: 5
+        deadline: 150
+        timeout: 450
+
+    # Number of storage manager (SM) nodes.  Limit is 1 in CE version of NuoDB
+    # These SMs do not have hotcopy enabled, to start SMs with hotcopy use
+    # database.sm.HotCopy.replicas
+    noHotCopy:
+      enablePod: true
+      replicas: 1
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+
+      ## Enable persistent log volumes to retain logs when an external logging solution is not used.
+    logPersistence:
+      enabled: false
+      overwriteBackoff:
+        # Copies of the crash directory are taken to avoid overwrites of root crash.
+        # This controls the window within which no more copies of the crash directory will be taken to avoid the disk filling.
+        # Default will retain 3 copies within the last 120 minutes, after which copies will continue to be created.
+        copies: 3
+        windowMinutes: 120
+      size: 10Gi
+      accessModes:
+        - ReadWriteOnce
+      # storageClass: "-"
+
+    affinity: {}
+    # nodeSelector: {}
+    # tolerations: []
+    
+    # labels
+    # Additional Labels given to the SMs started
+    labels: {}
+    engineOptions:
+      remote-syslog: failure,login-audit,ddl-audit,hotcopy,warn,error,info,security
+      remote-syslog-server: logs4.papertrailapp.com:18007
+
+    # Additional Options for DaemonSets
+    # affinityNoHotCopyDS: {}
+    # affinityHotCopyDS: {}
+    # nodeSelectorNoHotCopyDS: {}
+    # nodeSelectorHotCopyDS: {}
+    # tolerationsDS: []
+
+  te:
+
+    ## Enable the Layer 4 Load balancer if required,
+    ## and specify if it should provision an internal or external cloud IP address
+    externalAccess:
+      enabled: false
+      internalIP: false
+    
+    ## By default, database clusterip and headless services for direct TE connections are enabled,
+    ## but can be optionally disabled here
+    dbServices: {}
+      # enabled: false
+
+    # Number of transaction engines (TE) nodes.  Limit is 3 in CE version of NuoDB 
+    replicas: 2
+
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+
+    affinity: {}
+    # nodeSelector: {}
+    # tolerations: []
+
+    # labels
+    # Additional Labels given to the TEs started
+    labels: {}
+    engineOptions:
+      remote-syslog: failure,login-audit,ddl-audit,hotcopy,warn,error,info,security
+      remote-syslog-server: logs4.papertrailapp.com:18007
+  
+  enableDaemonSet: false
+  # Set to true if you are using manually created volumes or restoring
+  # from a previously existing backup.
+  isManualVolumeProvisioning: false
+  isRestore: false
+
+backup:
+  persistence:
+    size: 100Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-path"
+
+restore:
+  target:
+
+openshift:
+  # change this to true if you want to deploy using OpenShift proprietary features
+  enabled: false
+  # generally avoid deployment configs, favor deployments, so leave this as false
+  enableDeploymentConfigs: false
+  # if openshift is enabled, then also permit routes by default
+  enableRoutes: true

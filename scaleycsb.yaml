@@ -1,0 +1,58 @@
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry and imagePullSecrets
+##
+# global:
+#   imageRegistry: myRegistryName
+#   imagePullSecrets:
+#     - myRegistryKeySecretName
+
+cloud:
+  # supported: amazon, azure, google
+  provider:
+  # zones:
+  #   - us-east-2a
+  #   - us-east-2b
+  #   - us-east-2c
+
+database:
+  # dbName
+  # NuoDB database name.  must consist of lowercase alphanumeric
+  #characters '[a-z0-9]+'
+  name: hockey
+
+ycsb:
+  # nameOverride: east
+  # fullnameOverride: admin-east
+
+  # replicas
+  # Number of YCSB pods
+  replicas: 0
+
+  # Use a direct TE connection
+  teDirect: true
+
+  # workload
+  # YCSB workload.  Valid values are a-f. Each letter determines a different
+  # mix of read and update workload percentage generated. a= 50/50, b=95/5,
+  # c=100 read. Refer to YCSB documentation for more detail
+  workload: b
+
+  # noOfProcesses
+  # Number of YCSB processes. Number of concurrent YCSB processes that will
+  # be started in each YCSB pod. Each YCSB process makes a connection to the
+  # database.
+  noOfProcesses: 2
+
+  # noOfRows: 10000
+  # YCSB number of initial rows in table
+  noOfRows: 100000
+
+  # opsPerIteration
+  # Number of YCSB SQL operations to perform in each iteration.
+  # This value controls the number of SQL operations performed in each benchmark
+  # iteration. Increasing this value increases the run-time of each iteration,
+  # and also reduces the frequency at which new connections are made during the
+  # sample workload run period.
+  opsPerIteration: 100000
+

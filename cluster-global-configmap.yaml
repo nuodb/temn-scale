@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-global
+  annotations:
+    description: "Global configuration which is THE SAME for all clusters"
+data:
+  CLUSTER_PROTOCOL:             TCP
+  CLUSTER_SERVICE:              vpn-cluster-service
+  CLUSTER_AP_ENTRYPOINT:      "10.10.10.11"
+
+  # the string to match against $COMPONENT_NAME (or $HOSTNAME) to identify an Admin container
+  ADMIN_COMPONENT:              "admin"
+
+  # Add more mappings as needed
+  # Every mapping var name starts with CLOUD_
+  # and ends with the provider name as found in /sys/devices/virtual/dmi/id/sys_vendor in the container
+  CLOUD_MICROSOFT_CORPORATION: azure
+  CLOUD_AMAZON_EC2:            aws

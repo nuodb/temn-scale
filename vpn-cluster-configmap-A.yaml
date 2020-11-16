@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config
+  annotations:
+    description: "Cluster-specific config. There is a different configMap for each cluster."
+data:
+  # the name and cluster subnet for this cluster
+  CLUSTER_NAME:   gcp
+  CLUSTER_SUBNET: "10.10.10.0"
+
+  # A space-separated list of the public address(es) of the vpn-cluster-service of each other (sibling) cluster 
+  CLUSTER_SIBLINGS: ""
+
+  # A space-separated list of the cluster subnet for each other (sibling) cluster
+  # This MUST NOT include the CLUSTER_SUBNET above
+  CLUSTER_SIBLING_SUBNETS: "10.10.20.0"
+
+  # the address of the Admin Process in THIS cluster that NuoDB engines will connect to
+  # NOTE: this MUST be an address on the CLUSTER_SUBNET above.
+  # PEER_ADDRESS:     "10.10.10.11"
+  
